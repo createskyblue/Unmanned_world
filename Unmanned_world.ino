@@ -1424,7 +1424,7 @@ void Event() {
                     arduboy.println();
                     arduboy.println();
                   */
-                  drawText(0, 57, MES[MesI], pgm_read_byte(&MESleng[MesI]));
+                  drawText(1, 56, MES[MesI], pgm_read_byte(&MESleng[MesI]));
                   if (millis() >= dialog_cool_time + Timer[2]) {
                     Timer[2] = millis();
                     key();
