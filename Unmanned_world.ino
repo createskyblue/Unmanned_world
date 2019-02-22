@@ -9,7 +9,6 @@ union uint
   int a;
   byte b[2];
 };
-bool GameEnd = false; //关系到ROOM-20状态
 bool player_move = false; //玩家是否移动
 bool key_lock = false; //键盘锁
 bool move_lock = false; //方向锁
@@ -1102,15 +1101,16 @@ const PROGMEM byte ETXY[ETNUM][2][2] = {
   {{10, 5}, {53, 53}},
   {{13, 13}, {54, 54}},
   {{11, 1}, {7, 7}},
+  
   {{15, 0}, {7, 7}},
   {{15, 15}, {7, 7}},
   {{0, 15}, {7, 7}},
-  {{0, 15}, {7, 7}},
-  {{0, 0}, {7, 7}},
   {{15, 15}, {7, 7}},
-  {{15, 15}, {7, 7}},
-  {{0, 0}, {7, 7}},
   {{15, 0}, {7, 7}},
+  {{15, 0}, {7, 7}},
+  {{15, 0}, {7, 7}},
+  {{15, 0}, {7, 7}},
+  {{0, 15}, {7, 7}},
   {{15, 15}, {7, 7}},
   {{0, 0}, {0, 11}},
   {{3, 10}, {1, 8}},
@@ -1359,7 +1359,7 @@ void logic()
   if (ROOM >= 245) {
     DrawKarmaB = false;
     if (abs(int((Entity[0][0] / 16) - pgm_read_byte(&ETXY[ROOM - 145][0][0]))) <= 7 && abs(int((Entity[0][1] / 16) - pgm_read_byte(&ETXY[ROOM - 145][0][1]))) <= 7) DrawKarmaB = true;
-    if (ROOM == 255) GameEnd = true;
+    if (ROOM == 255) EEPROM.update(512,1);
   }
 
   /*
@@ -1496,13 +1496,13 @@ void draw()
   arduboy.clear();
   DrawMap();
   draw_player(55, 23);
-  if (ROOM == Entity[1][2] && GameEnd == true) draw_Reverberation(Entity[1][0] - Entity[0][0] / 2, Entity[1][1] - Entity[0][1] / 2);
+  if (ROOM == Entity[1][2] && EEPROM.read(512) == 1) draw_Reverberation(Entity[1][0] - Entity[0][0] / 2, Entity[1][1] - Entity[0][1] / 2);
   // draw_Reverberation(64, 32);
   if (DrawKarmaB) DrawRune(0, 49, Karma - 1);
   Event();
   /*
     arduboy.setCursor(0, 0);
-    arduboy.print(map(player_dyn, 0, 2, 0, 1));
+    arduboy.print(EEPROM.read(512));
 
     drawFPS();
     arduboy.println(abs(int((Entity[0][0] / 16) - pgm_read_byte(&ETXY[ROOM - 145][0][0]))));
@@ -2005,10 +2005,11 @@ void ERst() {
   arduboy.println(F("SETUP EEPROM"));
   arduboy.display();
   Esave();
-  EEPROM.update(5, 2);
-  EWUint(6, 191);
-  EWUint(8, 32);
-  EEPROM.update(10, 11);
+  EEPROM.update(5, 2); //业力
+  EWUint(6, 191);  //玩家x
+  EWUint(8, 32);   //玩家y
+  EEPROM.update(10, 11);  //载入地图
+  EEPROM.update(512,0); //游戏状态
   arduboy.println(F("REBOOT"));
   arduboy.display();
   delay(1500);
