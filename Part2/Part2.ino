@@ -1326,9 +1326,6 @@ void logic()
     case 5:
       InfoMenu();
       break;
-    case 6:
-      ERst();
-      break;
   }
   /*
      如果障碍物判断合法那么将会进行移动
@@ -1348,7 +1345,7 @@ void logic()
   */
   if (Karma <= 0 || Karma > 10) ERst();
   if (ROOM >= 246 && Karma < ROOM - 245) {
-    drawText(0, 57, MES[56], pgm_read_byte(&MESleng[56]));
+    drawText(0, 57, MES[56], pgm_read_byte(&MESleng[56]),1);
     arduboy.display();
     delay(1000);
     TP(14, 103, 31, 1);
@@ -1425,7 +1422,7 @@ void Event() {
                     arduboy.println();
                     arduboy.println();
                   */
-                  drawText(1, 56, MES[MesI], pgm_read_byte(&MESleng[MesI]));
+                  drawText(1, 56, MES[MesI], pgm_read_byte(&MESleng[MesI]),1);
                   if (millis() >= dialog_cool_time + Timer[2]) {
                     Timer[2] = millis();
                     key();
@@ -1836,7 +1833,7 @@ void drawCircle(int16_t x0, int16_t y0, uint8_t r, uint8_t color, uint8_t GC)
     if (random(0, 255) >= GC) arduboy.drawPixel(x0 - y, y0 - x, color);
   }
 }
-void drawText(uint8_t x, uint8_t y, const uint8_t *mes, uint8_t cnt)
+void drawText(uint8_t x, uint8_t y, const uint8_t *mes, uint8_t cnt, bool dda)
 {
   uint8_t pb;
   uint8_t page;
@@ -1858,7 +1855,7 @@ void drawText(uint8_t x, uint8_t y, const uint8_t *mes, uint8_t cnt)
     if (!page) {
       continue;
     }
-    arduboy.fillRect(x, y, 8, 8, 1); //白底
+    arduboy.fillRect(x, y - 1, 8, 9, 1); //白底
     switch (page) {
       case MISAKI_FONT_F1_PAGE:
         if (pb > MISAKI_FONT_F1_SIZE) {
@@ -1890,9 +1887,12 @@ void drawText(uint8_t x, uint8_t y, const uint8_t *mes, uint8_t cnt)
       x = screen_start;
       y = y + 8;
     }
-    arduboy.setCursor(x, y + player_dyn);
-    arduboy.print(char(31));
+    if (dda) drawDownArrow(x, y);
   }
+}
+void drawDownArrow(byte ddax, byte dday) {
+  arduboy.setCursor(ddax, dday + player_dyn);
+  arduboy.print(char(31));
 }
 void SetTextColor(bool color) {
   arduboy.setTextColor(color);

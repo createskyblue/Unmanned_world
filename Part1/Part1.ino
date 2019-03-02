@@ -21,8 +21,10 @@ bool WOOPS = false; //世界崩坏开关
 bool MoveTrue; //是否真移动
 bool BEF; //是否完成眨眼动作
 bool DrawKarmaB = true;  //是否绘制业力等级
+bool StartMenu = true;
 
 int FPS, SFPS;
+byte MenuChoose;
 byte rbcr = 16;
 byte Karma = 1; //业力值1-10  10:游戏结束
 byte BF; //眨眼帧
@@ -35,7 +37,7 @@ byte PlayerD = 1;       //玩家方向
 byte KeyBack = 255;     //按键返回
 byte SBDPL[] = {2, 5, 9, 10, 11, 12, 13, 14, 20, 21, 22, 24, 25, 26, 27, 28, 29, 30, 31, 33, 34, 35, 36, 39, 40, 43, 44, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 61}; //障碍物id
 int Entity[2][3] = {    //实体坐标 以及ROOM
-  {120, 136, 0},  //玩家出生点
+  {112, 152, 0},  //玩家出生点
 };
 unsigned long Timer[5];  //时间列表 0 1 2 3FPS 4眨眼时间
 //一次性业力列表 0-崩溃边缘 1-公园 2-小破庙 3-小溪边 4-床 5-酒 6-药 7-海岸 8-后花园 9-桃花源 EEPROM 127-158
@@ -741,7 +743,7 @@ const PROGMEM byte ETRoom[ETNUM][3] = {
   {2, 7, 1},
   {3, 8, 1},
   {3, 9, 1},
-  
+
 };
 /*事件触发坐标
    如果事件类型为传送第二属性为目标坐标
@@ -768,7 +770,7 @@ const PROGMEM byte ETXY[ETNUM][2][2] = {
   {{3, 7}, {15, 15}},
   {{4, 14}, {16, 18}},
   {{4, 15}, {19, 21}},
-  
+
 };
 /*事件触发方向以及其他属性 {,},
    如果触发方向为255则忽略方向限定
@@ -795,7 +797,7 @@ const PROGMEM byte ETPC[ETNUM][2] = {
   {255, 0},
   {255, 1},
   {255, 1},
-  
+
 };
 /*====================================================================
                              软重启函数
@@ -812,7 +814,7 @@ void setup()
   //Serial.begin(115200);
   ROOM = Entity[0][2];
   draw();
-  Eload();
+
 }
 /*====================================================================
                              主程序
@@ -832,9 +834,57 @@ void FixedUpdate()
 void Update()
 {
   draw();
-
+  if (StartMenu) ChooseMenu();
   FPS++;
+  arduboy.display();
+}
+/*
+   开始界面
+*/
+void ChooseMenu() {
+  move_lock = true;
+  key();
+  switch (KeyBack) {
+    case 0:
+      if (MenuChoose > 0) MenuChoose--;
+      break;
+    case 1:
+      if (MenuChoose < 2) MenuChoose++;
+      break;
+    case 4:
+      switch (MenuChoose) {
+        case 0:
+          Eload();
+          StartMenu = false;
+          move_lock = false;
+          break;
+        case 1:
+          ERst();
+          break;
+        case 2:
+          for (byte i = 0; i < 8; i++) {
+            drawText(0, i * 8, MES[i + 28], pgm_read_byte(&MESleng[i + 28]), 0);
+          }
+          break;
+      }
+      break;
+  }
+  /*
+     开始画主菜单选项
+  */
+  arduboy.fillRect(84, 15, 39, 40, 1);
+  Blur(84, 15, 123, 55, 2);
 
+  //列出中文菜单3个选项
+  for (byte i = 0; i < 3; i++) {
+    drawText(88, i * 10 + 19, MES[i + 26], pgm_read_byte(&MESleng[i + 26]), 0);
+  }
+  //光标
+  drawDownArrow(80, MenuChoose * 10 + 19);
+  /*DEBUG
+    arduboy.setCursor(0, 0);
+    arduboy.print(MenuChoose);
+  */
 }
 /*====================================================================
                              逻辑
@@ -844,7 +894,7 @@ void logic()
   /*
      检测按键返回值 对相应方向进行移动障碍物判断
   */
-  if (KeyBack < 4) {
+  if (KeyBack < 4 && move_lock == 0) {
     SBDP();
     player_move = true;
   } else {
@@ -874,9 +924,6 @@ void logic()
     case 5:
       InfoMenu();
       break;
-    case 6:
-      ERst();
-      break;
   }
   /*
      如果障碍物判断合法那么将会进行移动
@@ -898,7 +945,7 @@ void logic()
   /*
      通关
   */
-  if (ROOM == 255) {
+  if (ROOM == 11) {
     MBlur();
     UpdateROM();
   }
@@ -909,14 +956,14 @@ void logic()
       }
       Esave();
       EEPROM.update(5, 2); //业力
-      EWUint(6, 191);  //玩家x
+      EWUint(6, 160);  //玩家x
       EWUint(8, 32);   //玩家y
       EEPROM.update(10, 11);  //载入地图
       EEPROM.update(512, 2); //游戏状态
       EEPROM.update(513, 2); //游戏状态
       EndOfTutorial = true;
     }
-    if (Karma == 10) ROOM = 4; else ROOM = 255;
+    if (Karma >=9) ROOM = 4; else ROOM = 11;
   }
   if (EEPROM.read(512) != EEPROM.read(513)) EEPROM.update(513, EEPROM.read(512));  //确保存档状态码可靠性
   /*
@@ -973,7 +1020,7 @@ void Event() {
                     arduboy.println();
                     arduboy.println();
                   */
-                  drawText(1, 56, MES[MesI], pgm_read_byte(&MESleng[MesI]));
+                  drawText(1, 56, MES[MesI], pgm_read_byte(&MESleng[MesI]), 1);
                   if (millis() >= dialog_cool_time + Timer[2]) {
                     Timer[2] = millis();
                     key();
@@ -1024,9 +1071,11 @@ void Event() {
    场景虚化
 */
 void Blur(int sx, int sy, int ex, int ey, byte f) {
-  for (byte y = 0; y < 64; y++) {
-    for (byte x = 0; x < 128; x++) {
-      if (x % 2 == y % 2 && x % 2 == 0 && x >= sx && x <= ex && y >= sy && y <= ey) arduboy.drawPixel(x + (f > 0 && f < 3), y + (f > 1), 0);
+  for (byte i = 0; i < f; i++) {
+    for (byte y = 0; y < 64; y++) {
+      for (byte x = 0; x < 128; x++) {
+        if (x % 2 == y % 2 && x % 2 == 0 && x >= sx && x <= ex && y >= sy && y <= ey) arduboy.drawPixel(x + (i > 0 && i < 3), y + (i > 1), 0);
+      }
     }
   }
 }
@@ -1048,17 +1097,12 @@ void draw()
   // draw_Reverberation(64, 32);
   if (DrawKarmaB) DrawRune(0, 49, Karma - 1);
   Event();
-  /*
-    arduboy.setCursor(0, 0);
-    arduboy.print(EEPROM.read(512));
-
+ /*
     drawFPS();
     arduboy.println(abs(int((Entity[0][0] / 16) - pgm_read_byte(&ETXY[ROOM - 145][0][0]))));
     arduboy.println(abs(int((Entity[0][1] / 16) - pgm_read_byte(&ETXY[ROOM - 145][0][1]))));
     arduboy.println(ROOM);
   */
-  arduboy.display();
-
 }
 /*
    显示符文
@@ -1371,7 +1415,7 @@ void drawCircle(int16_t x0, int16_t y0, uint8_t r, uint8_t color, uint8_t GC)
     if (random(0, 255) >= GC) arduboy.drawPixel(x0 - y, y0 - x, color);
   }
 }
-void drawText(uint8_t x, uint8_t y, const uint8_t *mes, uint8_t cnt)
+void drawText(uint8_t x, uint8_t y, const uint8_t *mes, uint8_t cnt, bool dda)
 {
   uint8_t pb;
   uint8_t page;
@@ -1425,9 +1469,12 @@ void drawText(uint8_t x, uint8_t y, const uint8_t *mes, uint8_t cnt)
       x = screen_start;
       y = y + 8;
     }
-    arduboy.setCursor(x, y + player_dyn);
-    arduboy.print(char(31));
+    if (dda) drawDownArrow(x, y);
   }
+}
+void drawDownArrow(byte ddax, byte dday) {
+  arduboy.setCursor(ddax, dday + player_dyn);
+  arduboy.print(char(31));
 }
 void SetTextColor(bool color) {
   arduboy.setTextColor(color);
@@ -1474,9 +1521,6 @@ void Eload() {
     if (i < 5 && EData != pgm_read_byte(&mes37[i])) ERst();
   }
   if (EEPROM.read(512) != EEPROM.read(513)) ERst();
-  if (EEPROM.read(512) == 2) {
-    UpdateROM();
-  }
   for (int i = 0; i < 1024; i++) {
     EData = EEPROM.read(i);
     switch (i) {
@@ -1522,17 +1566,6 @@ void drawOOPS() {
   arduboy.display();
 }
 void ERst() {
-  drawOOPS();
-  arduboy.display();
-  delay(1000);
-  SetTextColor(0);
-  arduboy.println(F("SAV CHECK ERROR!"));
-  SetTextColor(1);
-  for (byte i = 0; i < 5; i++) {
-    arduboy.println( byte(EEPROM.read(i)) + String("!=") + pgm_read_byte(&mes37[i]));
-  }
-  arduboy.display();
-  delay(5000);
   arduboy.clear();
   drawOOPS();
   SetTextColor(0);
@@ -1545,8 +1578,8 @@ void ERst() {
   arduboy.display();
   Esave();
   EEPROM.update(5, 1); //业力
-  EWUint(6, 120);  //玩家x
-  EWUint(8, 136);   //玩家y
+  EWUint(6, 112);  //玩家x
+  EWUint(8, 152);   //玩家y
   EEPROM.update(10, 0);  //载入地图
   EEPROM.update(512, 1); //游戏状态
   EEPROM.update(513, 1); //游戏状态
@@ -1565,9 +1598,7 @@ void UpdateROM() {
   arduboy.fillRect(0, 0, 128, 64, 1);
   arduboy.drawBitmap(55, 7, Block_37, 16, 16, 0);
   arduboy.setCursor(4, 39);
-  arduboy.print(F("Please upload Part"));
-  arduboy.setCursor(120, 39);
-  arduboy.print(EEPROM.read(512));
+  arduboy.print(F("Please upload Part 2"));
   arduboy.display();
   while (1) {}
 }
