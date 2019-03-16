@@ -1,0 +1,3 @@
+https://teamarg.github.io/arduboy-image-converter/
+https://teamarg.github.io/arduboy-tile-converter/
+https://mlxxxp.github.io/documents/Arduino/libraries/Arduboy2/Doxygen/html/classArduboy2Base.html#a98425765d85ffa9c68a260b0b9aecc37
