@@ -1525,7 +1525,8 @@ void DrawRune(int x, int y, byte K)
 void DrawKarma(char KC)
 {
   //KC 业力变动范围 -1 0 1
-  if (Karma + KC > 0 && Karma + KC <= 10) Karma += KC;
+  if (Karma + KC > 0) Karma += KC;
+  if (Karma > 10) Karma = 10;
   for (char KCY = 14 * KC;;) {
     arduboy.clear();
     DrawMap();
