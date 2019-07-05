@@ -7,7 +7,6 @@ title Arduboy音乐生成器 - %档案名%
 set /p 音调=音调  
 set /p 间隔=间隔  
 :logic
-
 if "%音调%"=="0" set 写入音调=0
 if "%音调%"=="1" set 写入音调=262
 if "%音调%"=="2" set 写入音调=294
